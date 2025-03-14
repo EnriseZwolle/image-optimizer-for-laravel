@@ -97,11 +97,12 @@ There are multiple ways to use this package.
 
 This package comes with two components out of the box.
 
-Both components accept the following 3 parameters
+Both components accept the following 4 parameters
 
 - src: The path to the image. This can be a relative or an absolute path.
-- width: Optional - the minimum width of the image. It will pick the closest dimension set in the config
-- webp: Optional - determines if the image should be converted to the webp format
+- Quality: Optional - Default quality of 80 
+- width: Optional - The minimum width of the image. It will pick the closest dimension set in the config
+- webp: Optional - Determines if the image should be converted to the webp format
 
 #### Image
 
