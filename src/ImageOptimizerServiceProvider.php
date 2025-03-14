@@ -2,11 +2,11 @@
 
 namespace EnriseZwolle\ImageOptimizer;
 
+use EnriseZwolle\ImageOptimizer\Commands\ImageOptimizerClearCacheCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Config;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use EnriseZwolle\ImageOptimizer\Commands\ImageOptimizerCommand;
 
 class ImageOptimizerServiceProvider extends PackageServiceProvider
 {
@@ -24,7 +24,8 @@ class ImageOptimizerServiceProvider extends PackageServiceProvider
         $package
             ->name('image-optimizer')
             ->hasConfigFile()
-            ->hasViews();
+            ->hasViews()
+            ->hasCommand(ImageOptimizerClearCacheCommand::class);
     }
 
     protected function registerComponentNamespace(): self

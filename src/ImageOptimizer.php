@@ -3,6 +3,7 @@
 namespace EnriseZwolle\ImageOptimizer;
 
 use Exception;
+use Illuminate\Filesystem\Filesystem;
 use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -59,6 +60,15 @@ class ImageOptimizer {
             // When image could not be processed return the base image
             return $src;
         }
+    }
+
+    public function clearCache(): void
+    {
+        $path = Storage::disk($this->getDisk())->path('');
+
+        $filesystem = app(Filesystem::class);
+
+        $filesystem->cleanDirectory($path);
     }
 
     public function getDisk(): string
