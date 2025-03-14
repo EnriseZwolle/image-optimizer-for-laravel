@@ -34,7 +34,7 @@ return [
     /*
      * The driver that will be used to create images. Can be set to gd or imagick.
      */
-    'driver' => 'gdd',
+    'driver' => 'gd',
 
     /*
      * The widths an image is stored in.
