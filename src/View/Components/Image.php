@@ -22,7 +22,7 @@ class Image extends Component
 
     protected function getImageUrl(): string
     {
-        if (! filled($this->width)) {
+        if (! $this->hasValidSrc) {
             return $this->src;
         }
 

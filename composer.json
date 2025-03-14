@@ -30,9 +30,11 @@
         "pestphp/pest-plugin-laravel": "^3.0"
     },
     "autoload": {
+        "files": [
+            "src/Helpers/helpers.php"
+        ],
         "psr-4": {
-            "EnriseZwolle\\ImageOptimizer\\": "src/",
-            "EnriseZwolle\\ImageOptimizer\\Database\\Factories\\": "database/factories/"
+            "EnriseZwolle\\ImageOptimizer\\": "src/"
         }
     },
     "autoload-dev": {

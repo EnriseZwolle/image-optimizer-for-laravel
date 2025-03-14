@@ -1,0 +1,1 @@
+<source srcset="{{ $imageSource }}" {{ $attributes }}>
