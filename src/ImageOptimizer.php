@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Encoders\AutoEncoder;
 use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Drivers\AbstractDriver;
-use Intervention\Image\Interfaces\EncodedImageInterface;
 use Intervention\Image\Interfaces\ImageInterface;
 use Intervention\Image\Exceptions\DriverException;
-use EnriseZwolle\ImageOptimizer\DataObjects\ImageData;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use EnriseZwolle\ImageOptimizer\DataObjects\ImageData;
+use Intervention\Image\Interfaces\EncodedImageInterface;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 
 class ImageOptimizer {
