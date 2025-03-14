@@ -1,3 +1,15 @@
+# TODO
+
+* Create multiple components
+  * Image
+  * Picture with webp and default fallback
+* Extend facade
+* Implement builder class
+* Register custom file driver/disk
+* Implement glide/intervention
+* Only generate image when it is requested
+  * Cache result
+
 # This is my package image-optimizer-for-laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/enrisezwolle/image-optimizer-for-laravel.svg?style=flat-square)](https://packagist.org/packages/enrisezwolle/image-optimizer-for-laravel)

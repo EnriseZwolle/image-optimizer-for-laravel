@@ -1,1 +1,1 @@
-<p> it works</p>
+<img src="{{ $imageSource }}" {{ $attributes }}>

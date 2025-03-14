@@ -2,27 +2,54 @@
 
 namespace EnriseZwolle\ImageOptimizer;
 
-use EnriseZwolle\ImageOptimizer\View\Components\Image;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Config;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use EnriseZwolle\ImageOptimizer\Commands\ImageOptimizerCommand;
 
 class ImageOptimizerServiceProvider extends PackageServiceProvider
 {
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        $this->registerDisk()
+            ->registerComponentNamespace();
+    }
+
     public function configurePackage(Package $package): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
         $package
-            ->name('image-optimizer-for-laravel')
+            ->name('image-optimizer')
             ->hasConfigFile()
-            ->hasViews('image-optimizer')
-            ->hasViewComponents('image-optimizer', Image::class)
-            ->hasMigration('create_image_optimizer_for_laravel_table')
-            ->hasCommand(ImageOptimizerCommand::class);
+            ->hasViews();
+    }
+
+    protected function registerComponentNamespace(): self
+    {
+        Blade::componentNamespace('EnriseZwolle\\ImageOptimizer\\View\\Components', 'image-optimizer');
+
+        return $this;
+    }
+
+    protected function registerDisk(): self
+    {
+        $diskName = Config::get('image-optimizer.disk.name');
+        $diskConfig = Config::get('image-optimizer.disk.config');
+        $storageLinks = Config::get('image-optimizer.disk.links');
+
+        if (! Config::get('filesystems.disks.' . $diskName) && filled($diskConfig)) {
+            Config::set('filesystems.disks.' . $diskName, $diskConfig);
+
+            if (filled($storageLinks) && is_array($storageLinks)) {
+                $links = Config::get('filesystems.links', []) + $storageLinks;
+
+                Config::set('filesystems.links', $links);
+            }
+        }
+
+        return $this;
     }
 }
