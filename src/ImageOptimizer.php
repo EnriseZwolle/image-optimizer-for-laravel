@@ -4,18 +4,12 @@ namespace EnriseZwolle\ImageOptimizer;
 
 use Exception;
 use Illuminate\Filesystem\Filesystem;
-use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Encoders\AutoEncoder;
-use Intervention\Image\Encoders\WebpEncoder;
-use Intervention\Image\Drivers\AbstractDriver;
-use Intervention\Image\Interfaces\ImageInterface;
-use Intervention\Image\Exceptions\DriverException;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use EnriseZwolle\ImageOptimizer\DataObjects\ImageData;
-use Intervention\Image\Interfaces\EncodedImageInterface;
-use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\Constraint;
+use Intervention\Image\Image;
+use Intervention\Image\ImageManagerStatic as ImageManager;
 
 class ImageOptimizer {
     public function getImage(
@@ -41,6 +35,7 @@ class ImageOptimizer {
         try {
             // Convert url to Intervention image and process options
             $image = $this->loadImage($imageData->url);
+
             $this->processImage($image, $imageData);
 
             // Encode the image and apply quality
@@ -53,10 +48,9 @@ class ImageOptimizer {
 
             // When image could not be stored to disk return base image
             return $src;
-        } catch (DriverException $exception) {
-            // Throw exception when driver is configured incorrectly
-            throw $exception;
         } catch (Exception $exception) {
+            report($exception);
+
             // When image could not be processed return the base image
             return $src;
         }
@@ -90,41 +84,44 @@ class ImageOptimizer {
         return null;
     }
 
-    protected function loadImage(string $url): ImageInterface
+    protected function loadImage(string $url): Image
     {
         $imageData = file_get_contents($url);
 
-        $manager = new ImageManager($this->getInterventionDriver());
-        return $manager->read($imageData);
+        ImageManager::configure(['driver' => $this->getInterventionDriver()]);
+        return ImageManager::make($imageData);
     }
 
-    protected function processImage(ImageInterface &$image, ImageData $imageData): void
+    protected function processImage(Image &$image, ImageData $imageData): void
     {
         if ($width = $imageData->width) {
             $this->resizeImage($image, $width);
         }
     }
 
-    protected function resizeImage(ImageInterface &$image, int $width): void
+    protected function resizeImage(Image &$image, int $width): void
     {
-        $image->scaleDown(width: $width);
+        $image->resize($width, null, function (Constraint $constraint) {
+            $constraint->aspectRatio();
+            $constraint->upsize();
+        });
     }
 
-    protected function encodeImage(ImageInterface $image, ImageData $imageData): EncodedImageInterface
+    protected function encodeImage(Image $image, ImageData $imageData): Image
     {
         if ($imageData->webp) {
-            return $image->encode(new WebpEncoder(quality: $imageData->quality));
+            return $image->encode('webp', $imageData->quality);
         }
 
-        return $image->encode(new AutoEncoder(quality: $imageData->quality));
+        return $image->encode(quality: $imageData->quality);
     }
 
-    protected function getInterventionDriver(): AbstractDriver
+    protected function getInterventionDriver(): string
     {
         return match (Config::get('image-optimizer.driver')) {
-            'gd' => new GdDriver(),
-            'imagick' => new ImagickDriver(),
-            default => throw new DriverException(),
+            'gd' => 'gd',
+            'imagick' => 'imagick',
+            default => throw new Exception('Invalid image driver, only gd and imagick are supported'),
         };
     }
 
