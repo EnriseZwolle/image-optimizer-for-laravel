@@ -40,7 +40,7 @@ class ImageOptimizer {
 
         try {
             // Convert url to Intervention image and process options
-            $image = $this->loadImage($imageData->url);
+            $image = $this->loadImage($imageData->src);
             $this->processImage($image, $imageData);
 
             // Encode the image and apply quality
@@ -133,29 +133,21 @@ class ImageOptimizer {
         $filename = pathinfo($src, PATHINFO_BASENAME);
         $extension = $webp ? 'webp' : pathinfo($src, PATHINFO_EXTENSION);
 
-        $url = $this->isRelativePath($src) ? url($src) : $src;
-
         $dimensionalWidth = $this->getDimension($width);
 
-        $uniqueIdentifier = implode('_', array_filter([$url, $quality, $dimensionalWidth, $webp]));
+        $uniqueIdentifier = implode('_', array_filter([$src, $quality, $dimensionalWidth, $webp]));
         $encryptedFilename = hash('sha256', $uniqueIdentifier);
 
         return new ImageData(
-            originalSrc: $src,
+            src: $src,
             originalFilename: $filename,
             originalExtension: $extension,
-            url: $url,
             uniqueIdentifier: $uniqueIdentifier,
             uniqueFilename: $encryptedFilename . '.' . $extension,
             quality: $quality,
             width: $dimensionalWidth,
             webp: $webp,
         );
-    }
-
-    protected function isRelativePath($url): bool
-    {
-        return ! isset(parse_url($url)['host']);
     }
 
     protected function getDimension(?int $width): ?int

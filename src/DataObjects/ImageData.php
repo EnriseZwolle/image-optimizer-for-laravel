@@ -8,10 +8,9 @@ use Illuminate\Support\Facades\Config;
 class ImageData
 {
     public function __construct(
-        public string $originalSrc,
+        public string $src,
         public string $originalFilename,
         public string $originalExtension,
-        public string $url,
         public string $uniqueIdentifier,
         public string $uniqueFilename,
         public int $quality = 80,
