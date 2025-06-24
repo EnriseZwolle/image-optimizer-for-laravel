@@ -10,7 +10,6 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class ImageOptimizerServiceProvider extends PackageServiceProvider
 {
-
     public function boot(): void
     {
         parent::boot();
@@ -25,6 +24,7 @@ class ImageOptimizerServiceProvider extends PackageServiceProvider
             ->name('image-optimizer')
             ->hasConfigFile()
             ->hasViews()
+            ->hasRoute('image-optimizer')
             ->hasCommand(ImageOptimizerClearCacheCommand::class);
     }
 
