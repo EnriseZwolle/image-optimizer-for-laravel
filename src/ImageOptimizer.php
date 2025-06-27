@@ -4,6 +4,8 @@ namespace EnriseZwolle\ImageOptimizer;
 
 use Exception;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use EnriseZwolle\ImageOptimizer\DataObjects\ImageData;
@@ -12,7 +14,7 @@ use Intervention\Image\Image;
 use Intervention\Image\ImageManagerStatic as ImageManager;
 
 class ImageOptimizer {
-    public function getImage(
+    public function getUrl(
         string $src,
         int $quality = 80,
         ?int $width = null,
@@ -32,10 +34,72 @@ class ImageOptimizer {
             return $cachedUrl;
         }
 
+        // if not cached, check if src exists, else simply return the base src
+        if (file_exists($imageData->src)) {
+            return route('image-optimizer.generate', [
+                'hash' => $this->encodePath($imageData->src),
+                'quality' => $quality,
+                'width' => $width,
+                'webp' => $webp,
+            ]);
+        }
+
+        try {
+            if (Http::timeout(1)->head($src)->successful()) {
+                return route('image-optimizer.generate', [
+                    'hash' => $this->encodePath($imageData->src),
+                    'quality' => $quality,
+                    'width' => $width,
+                    'webp' => $webp,
+                ]);
+            }
+        } catch (Exception $exception) {
+            return $src;
+        }
+
+        return $src;
+    }
+
+    public function encodePath(string $path): string
+    {
+        return rtrim(strtr(base64_encode($path), '+/', '-_'), '=');
+    }
+
+    public function decodePath(string $path): string
+    {
+        $remainder = strlen($path) % 4;
+        if ($remainder) {
+            $padlen = 4 - $remainder;
+            $path .= str_repeat('=', $padlen);
+        }
+
+        return base64_decode(strtr($path, '-_', '+/'));
+    }
+
+    public function getImage(
+        string $src,
+        int $quality = 80,
+        ?int $width = null,
+        bool $webp = false,
+        bool $relative = false,
+    ): string
+    {
+        // Do not attempt to modify svg images
+        if ($this->isSvg($src)) {
+            return $src;
+        }
+
+        // Transform to image data
+        $imageData = $this->getImageData($src, $quality, $width, $webp);
+
+        // Check if the cached file exists
+        if ($cachedUrl = $this->getCachedImage($imageData, $relative)) {
+            return $cachedUrl;
+        }
+
         try {
             // Convert url to Intervention image and process options
-            $image = $this->loadImage($imageData->url);
-
+            $image = $this->loadImage($imageData->src);
             $this->processImage($image, $imageData);
 
             // Encode the image and apply quality
@@ -43,7 +107,7 @@ class ImageOptimizer {
 
             // Attempt to write image to disk and return the public url
             if (Storage::disk($this->getDisk())->put($imageData->uniqueFilename, $encodedImage)) {
-                return Storage::disk($this->getDisk())->url($imageData->uniqueFilename);
+                return Storage::disk($this->getDisk())->path($imageData->uniqueFilename);
             }
 
             // When image could not be stored to disk return base image
@@ -75,9 +139,13 @@ class ImageOptimizer {
         return pathinfo($src, PATHINFO_EXTENSION) === 'svg';
     }
 
-    protected function getCachedImage(ImageData $imageData): ?string
+    protected function getCachedImage(ImageData $imageData, bool $relative = false): ?string
     {
         if (Storage::disk($this->getDisk())->exists($imageData->uniqueFilename)) {
+            if ($relative) {
+                return Storage::disk($this->getDisk())->path($imageData->uniqueFilename);
+            }
+
             return Storage::disk($this->getDisk())->url($imageData->uniqueFilename);
         }
 
@@ -86,7 +154,13 @@ class ImageOptimizer {
 
     protected function loadImage(string $url): Image
     {
-        $imageData = file_get_contents($url);
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 3, // timeout in seconds
+            ]
+        ]);
+
+        $imageData = file_get_contents($url, false, $context);
 
         ImageManager::configure(['driver' => $this->getInterventionDriver()]);
         return ImageManager::make($imageData);
@@ -127,32 +201,32 @@ class ImageOptimizer {
 
     protected function getImageData(string $src, int $quality, ?int $width, bool $webp): ImageData
     {
+        // Encode spaces in url
+        $src = str_replace(' ', '%20', $src);
+
+        // Transform FQN for local files to a relative path
+        if (Str::startsWith($src, config('app.url'))) {
+            $src = ltrim(Str::after($src, config('app.url')), '/');
+        }
+
         $filename = pathinfo($src, PATHINFO_BASENAME);
         $extension = $webp ? 'webp' : pathinfo($src, PATHINFO_EXTENSION);
 
-        $url = $this->isRelativePath($src) ? url($src) : $src;
-
         $dimensionalWidth = $this->getDimension($width);
 
-        $uniqueIdentifier = implode('_', array_filter([$url, $quality, $dimensionalWidth, $webp]));
+        $uniqueIdentifier = implode('_', array_filter([$src, $quality, $dimensionalWidth, $webp]));
         $encryptedFilename = hash('sha256', $uniqueIdentifier);
 
         return new ImageData(
-            originalSrc: $src,
+            src: $src,
             originalFilename: $filename,
             originalExtension: $extension,
-            url: $url,
             uniqueIdentifier: $uniqueIdentifier,
             uniqueFilename: $encryptedFilename . '.' . $extension,
             quality: $quality,
             width: $dimensionalWidth,
             webp: $webp,
         );
-    }
-
-    protected function isRelativePath($url): bool
-    {
-        return ! isset(parse_url($url)['host']);
     }
 
     protected function getDimension(?int $width): ?int
