@@ -100,6 +100,12 @@ class ImageOptimizer {
         try {
             // Convert url to Intervention image and process options
             $image = $this->loadImage($imageData->src);
+
+            // If image could not be loaded return original src
+            if (! $image) {
+                return $src;
+            }
+
             $this->processImage($image, $imageData);
 
             // Encode the image and apply quality
@@ -152,7 +158,7 @@ class ImageOptimizer {
         return null;
     }
 
-    protected function loadImage(string $url): Image
+    protected function loadImage(string $url): ?Image
     {
         $context = stream_context_create([
             'http' => [
@@ -160,7 +166,11 @@ class ImageOptimizer {
             ]
         ]);
 
-        $imageData = file_get_contents($url, false, $context);
+        $imageData = @file_get_contents($url, false, $context);
+
+        if (! $imageData) {
+            return null;
+        }
 
         ImageManager::configure(['driver' => $this->getInterventionDriver()]);
         return ImageManager::make($imageData);
