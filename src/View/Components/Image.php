@@ -26,7 +26,7 @@ class Image extends Component
             return $this->src;
         }
 
-        return ImageOptimizer::getImage($this->src, $this->quality, $this->width, $this->webp);
+        return ImageOptimizer::getUrl($this->src, $this->quality, $this->width, $this->webp);
     }
 
     public function render(): View

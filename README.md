@@ -127,6 +127,16 @@ Both components accept the following 4 parameters
 </picture>
 ```
 
+When relative paths cannot be resolved please use a full path for example:
+
+```bladehtml
+<x-image-optimizer::image
+    :src="\Illuminate\Support\Facades\Storage::disk('public')->path('image.jpg')"
+    width="200"
+    :webp="true"
+/>
+```
+
 ### Facade
 
 This package also comes with a facade if you would rather write your own implementation.
