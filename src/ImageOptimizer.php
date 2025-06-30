@@ -35,7 +35,7 @@ class ImageOptimizer {
         }
 
         // if not cached, check if src exists, else simply return the base src
-        if (file_exists($imageData->src)) {
+        if (@file_exists($imageData->src)) {
             return route('image-optimizer.generate', [
                 'hash' => $this->encodePath($imageData->src),
                 'quality' => $quality,
@@ -212,7 +212,7 @@ class ImageOptimizer {
     protected function getImageData(string $src, int $quality, ?int $width, bool $webp): ImageData
     {
         // Encode spaces in url
-        $src = Str::of($src)->replace(' ', '%20')->before('?')->toString();
+        $src = str_replace(' ', '%20', $src);
 
         // Transform FQN for local files to a relative path
         if (Str::startsWith($src, config('app.url'))) {
