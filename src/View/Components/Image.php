@@ -11,12 +11,16 @@ class Image extends Component
     public bool $hasValidSrc;
 
     public function __construct(
-        private string $src,
+        private ?string $src,
         public int $quality = 80,
         public ?int $width = null,
         public bool $webp = false,
     )
     {
+        if (is_null($this->src)) {
+            $this->src = '';
+        }
+
         $this->hasValidSrc = filled($this->src);
     }
 
