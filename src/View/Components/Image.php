@@ -17,6 +17,10 @@ class Image extends Component
         public bool $webp = false,
     )
     {
+        if (is_null($this->src)) {
+            return $this->src = '';
+        }
+
         $this->hasValidSrc = filled($this->src);
     }
 
