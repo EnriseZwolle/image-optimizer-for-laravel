@@ -18,7 +18,7 @@ class Image extends Component
     )
     {
         if (is_null($this->src)) {
-            return $this->src = '';
+            $this->src = '';
         }
 
         $this->hasValidSrc = filled($this->src);
