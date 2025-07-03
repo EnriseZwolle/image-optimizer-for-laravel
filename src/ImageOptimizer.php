@@ -34,30 +34,16 @@ class ImageOptimizer {
             return $cachedUrl;
         }
 
-        // if not cached, check if src exists, else simply return the base src
-        if (@file_exists($imageData->src)) {
+        try {
             return route('image-optimizer.generate', [
                 'hash' => $this->encodePath($imageData->src),
                 'quality' => $quality,
                 'width' => $width,
                 'webp' => $webp,
             ]);
-        }
-
-        try {
-            if (Http::timeout(1)->head($src)->successful()) {
-                return route('image-optimizer.generate', [
-                    'hash' => $this->encodePath($imageData->src),
-                    'quality' => $quality,
-                    'width' => $width,
-                    'webp' => $webp,
-                ]);
-            }
         } catch (Exception $exception) {
             return $src;
         }
-
-        return $src;
     }
 
     public function encodePath(string $path): string
@@ -126,6 +112,19 @@ class ImageOptimizer {
         }
     }
 
+    public function getCachedImage(ImageData $imageData, bool $relative = false): ?string
+    {
+        if (Storage::disk($this->getDisk())->exists($imageData->uniqueFilename)) {
+            if ($relative) {
+                return Storage::disk($this->getDisk())->path($imageData->uniqueFilename);
+            }
+
+            return Storage::disk($this->getDisk())->url($imageData->uniqueFilename);
+        }
+
+        return null;
+    }
+
     public function clearCache(): void
     {
         $path = Storage::disk($this->getDisk())->path('');
@@ -143,19 +142,6 @@ class ImageOptimizer {
     protected function isSvg($src): bool
     {
         return pathinfo($src, PATHINFO_EXTENSION) === 'svg';
-    }
-
-    protected function getCachedImage(ImageData $imageData, bool $relative = false): ?string
-    {
-        if (Storage::disk($this->getDisk())->exists($imageData->uniqueFilename)) {
-            if ($relative) {
-                return Storage::disk($this->getDisk())->path($imageData->uniqueFilename);
-            }
-
-            return Storage::disk($this->getDisk())->url($imageData->uniqueFilename);
-        }
-
-        return null;
     }
 
     protected function loadImage(string $url): ?Image
@@ -209,7 +195,7 @@ class ImageOptimizer {
         };
     }
 
-    protected function getImageData(string $src, int $quality, ?int $width, bool $webp): ImageData
+    public function getImageData(string $src, int $quality, ?int $width, bool $webp): ImageData
     {
         // Encode spaces in url
         $src = str_replace(' ', '%20', $src);
