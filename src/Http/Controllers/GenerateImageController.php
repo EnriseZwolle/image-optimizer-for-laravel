@@ -2,14 +2,22 @@
 
 namespace EnriseZwolle\ImageOptimizer\Http\Controllers;
 
+use Exception;
+use Symfony\Component\Mime\MimeTypes;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use EnriseZwolle\ImageOptimizer\Facades\ImageOptimizer;
 use EnriseZwolle\ImageOptimizer\Http\Requests\GenerateImageRequest;
-use Exception;
 
 class GenerateImageController
 {
     public function __invoke(GenerateImageRequest $request, string $hash)
     {
+        // Check if the cached file exists
+        if ($cachedImage = ImageOptimizer::getCachedImage($request->getImageData(), true)) {
+            return $this->getStreamedResponse($cachedImage);
+        }
+
+        // Try to generate the image
         try {
             $image = ImageOptimizer::getImage(
                 $request->getImagePath(),
@@ -19,14 +27,28 @@ class GenerateImageController
             );
 
             if (file_exists($image)) {
-                return response()->stream(function () use ($image) {
-                    readfile($image);
-                });
+                return $this->getStreamedResponse($image);
             }
         } catch (Exception $exception) {
             abort(404);
         }
 
         abort(404);
+    }
+
+    public function getStreamedResponse(string $path): StreamedResponse
+    {
+        $filename = basename($path);
+        $mime = (new MimeTypes())->guessMimeType($path);
+
+        return response()->stream(
+            fn () => readfile($path),
+            200,
+            [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'public, max-age=86400',
+                'Content-Disposition' => `inline; filename="{$filename}"`,
+            ]
+        );
     }
 }

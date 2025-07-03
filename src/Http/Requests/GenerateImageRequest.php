@@ -2,8 +2,9 @@
 
 namespace EnriseZwolle\ImageOptimizer\Http\Requests;
 
-use EnriseZwolle\ImageOptimizer\Facades\ImageOptimizer;
 use Illuminate\Foundation\Http\FormRequest;
+use EnriseZwolle\ImageOptimizer\DataObjects\ImageData;
+use EnriseZwolle\ImageOptimizer\Facades\ImageOptimizer;
 
 class GenerateImageRequest extends FormRequest
 {
@@ -25,5 +26,10 @@ class GenerateImageRequest extends FormRequest
     public function isWebp(): bool
     {
         return $this->get('webp', false);
+    }
+
+    public function getImageData(): ImageData
+    {
+        return ImageOptimizer::getImageData($this->getImagePath(), $this->getQuality(), $this->getWidth(), $this->isWebp());
     }
 }
