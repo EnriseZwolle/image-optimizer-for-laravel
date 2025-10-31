@@ -200,8 +200,10 @@ class ImageOptimizer {
 
     public function getImageData(string $src, int $quality, ?int $width, bool $webp): ImageData
     {
-        // Encode spaces in url
-        $src = str_replace(' ', '%20', $src);
+        // Encode spaces in url when it isn't a local path
+        if (! Str::startsWith($src, '/')) {
+            $src = str_replace(' ', '%20', $src);
+        }
 
         // Transform FQN for local files to a relative path
         if (Str::startsWith($src, config('app.url'))) {
