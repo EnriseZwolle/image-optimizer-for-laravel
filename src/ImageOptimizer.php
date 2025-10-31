@@ -64,7 +64,7 @@ class ImageOptimizer {
             $path .= str_repeat('=', $padlen);
         }
 
-        return base64_decode(strtr($path, '-_', '+/'));
+        return urldecode(base64_decode(strtr($path, '-_', '+/')));
     }
 
     public function getImage(
